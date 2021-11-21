@@ -35,9 +35,20 @@ jobs:
 
   test:
     <<: *defaults
+    docker:
+      - image: circleci/node:12
+      - image: circleci/mysql:5.7
+        environment:
+          MYSQL_RANDOM_ROOT_PASSWORD: true
+          MYSQL_USER: test
+          MYSQL_PASSWORD: test
+          MYSQL_DATABASE: test
     steps:
       - attach_workspace:
           at: ~/grc
+      - run:
+          name: Wait for mysql
+          command: sleep 7
       - run:
           name: Run tests
           command: npm test
