@@ -17,14 +17,16 @@ interface Config {
   SCRAPER_TIMEOUT: number;
   PUBLISH_TIMEOUT: number;
   PORT: number;
+  BLOCK_PREFIX: string;
+  MINIMUM_WALLET_AMOUNT: number;
 }
 
 /**
  * Check setting existance and throw error if not provided
  * @param {Array} settings Setting name to check
  */
-const checkConfig = (settings: any[]): void => {
-  settings.forEach((setting: any): void => {
+const checkConfig = (settings: string[]): void => {
+  settings.forEach((setting: string): void => {
     if (!nconf.get(setting)) {
       throw new Error(`You must set ${setting} as an environment variable or in config.json!`);
     }
@@ -46,6 +48,8 @@ nconf
     'GRC_RPC_PORT',
     'START_BLOCK',
     'PORT',
+    'BLOCK_PREFIX',
+    'MINIMUM_WALLET_AMOUNT',
   ])
   // 3. Config file
   .file({
@@ -67,6 +71,8 @@ nconf
     PUBLISH_TIMEOUT: 2 * 60 * 1000,
     // PUBLISH_TIMEOUT: 20 * 1000,
     PORT: packageJson.port,
+    BLOCK_PREFIX: 'f055aa',
+    MINIMUM_WALLET_AMOUNT: 1,
   });
 
 // Check required settings
@@ -79,6 +85,8 @@ checkConfig([
   'START_BLOCK',
   'BLOCK_GROUPS',
   'PORT',
+  'BLOCK_PREFIX',
+  'MINIMUM_WALLET_AMOUNT',
 ]);
 
 export const config = Object.freeze(nconf.get()) as Config;

@@ -1,9 +1,8 @@
 import { StampsType } from '@prisma/client';
-import { ScriptPubKey } from 'gridcoin-rpc/dist/contracts/transaction';
-import { TX } from 'gridcoin-rpc/dist/types';
 import { config } from '../config';
 import { OP_RETURN, PREFIX, PROTOCOL } from '../constants';
 import { rpc } from '../lib/gridcoin';
+import { log } from '../lib/log';
 import { redis as redisConn } from '../lib/redis';
 import { Stamp } from '../models/Stamp';
 
@@ -25,7 +24,7 @@ export class Scraper {
   public async scrape(): Promise<void> {
     await this.readBlockInfo();
 
-    console.log('Starting the scraper');
+    log.info('Starting the scraper');
     // Get current block number
     const info = await this.grcRpc.getMiningInfo();
     const { blocks } = info;
@@ -40,7 +39,7 @@ export class Scraper {
 
   private async getNextBlock(): Promise<void> {
     await this.readBlockInfo();
-    console.log(`Processing block #${this.currentBlock + 1}`);
+    log.debug(`Processing block #${this.currentBlock + 1}`);
     try {
       const block = await this.grcRpc.getBlockByNumber(this.currentBlock + 1, true);
       // go through transactions
@@ -57,7 +56,7 @@ export class Scraper {
           const hex = Buffer.from(hexString);
           const re = new RegExp(`${OP_RETURN} ${PREFIX}`);
           if (re.test(asm)) {
-            console.log('We have found transaction');
+            log.info('We have found transaction');
             // console.log(hex.toString('utf8'));
             // console.log(hexString);
             // console.log(JSON.stringify(block, null, 2));
@@ -96,7 +95,7 @@ export class Scraper {
       // we have parsed the block
       await this.redis.set(REDIS_SCRAPER_KEY, this.currentBlock + 1);
     } catch (e) {
-      console.log(e);
+      log.error(e);
     }
   }
 }

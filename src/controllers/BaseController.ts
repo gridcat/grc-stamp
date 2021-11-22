@@ -35,8 +35,8 @@ enum MapFilterTypes {
   // 'notLike',
 }
 enum SortOrder {
-  asc = 'ASC',
-  desc = 'DESC',
+  asc = 'asc',
+  desc = 'desc',
 }
 
 interface Query {
@@ -58,7 +58,9 @@ export interface Pagination {
 }
 
 export interface Sorting {
-  order: [string, SortOrder][];
+  order: [{
+    [key: string]: SortOrder;
+  }];
 }
 
 export interface Fields {
@@ -182,7 +184,7 @@ export class Controller {
     const query = this.req.query as unknown as Query;
     if (!query) return;
     if ('sort' in query) {
-      const fields = query.sort.split(/,/).reduce((orderByArray, currentElem) => {
+      const fields: [{ [key: string]: SortOrder }] = query.sort.split(/,/).reduce((orderByArray, currentElem) => {
         let fieldName: string = currentElem;
         let order: SortOrder;
         order = SortOrder.asc;
@@ -194,14 +196,14 @@ export class Controller {
         // cleanup fieldname
         fieldName = fieldName.replace(/[^a-z0-9_-]/ig, '');
 
-        orderByArray.push([fieldName, order]);
+        orderByArray.push({ [fieldName]: order });
         return orderByArray;
-      }, []);
+      }, [] as any);
       if (fields) {
         this.useSort = { order: fields };
       }
     } else {
-      this.useSort = { order: [[DEFAULT_SORT_FIELD, SortOrder.asc]] };
+      this.useSort = { order: [{ [DEFAULT_SORT_FIELD]: SortOrder.asc }] };
     }
   }
 
@@ -213,7 +215,7 @@ export class Controller {
    */
   private discoverFilters(): void {
     const { query } = this.req;
-    if (!query) return;
+    if (!query || !this.model) return;
     const { attributes } = this.model;
     if ('filter' in query) {
       this.allFilters = query.filter as Record<string, string>;
@@ -228,13 +230,8 @@ export class Controller {
           const filterTypeUnresolved = ([Object.keys(query.filter[key])]).toString();
           if (Object.values(FilterTypes).includes(filterTypeUnresolved)) {
             const filterType = MapFilterTypes[filterTypeUnresolved];
-            // if (FILTER_TYPES.indexOf(filterType) > -1) {
             let list = query.filter[key][filterTypeUnresolved].split(',');
             list = list.map((value: any) => (Number.isNaN(value) ? value : BigInt(value)));
-            // if (filterType === 'like' || filterType === 'notLike') {
-            //   list = `%${list.toString()}%`;
-            // }
-            // filters.push({ [dbProperKey]: { [Op[filterType]]: list } });
 
             filters = {
               ...filters,
@@ -304,16 +301,20 @@ export class Controller {
     // return value && typeof value === 'object' && value.constructor === Object;
   }
 
-  public render<T>(data: T | RepoListResults<T>): Record<string, unknown> {
-    if ('rows' in data) {
+  public render<T>(
+    data: T | RepoListResults<T>,
+    customPresenter?: PresenterInterface,
+  ): Record<string, unknown> {
+    const presenter = customPresenter || this.presenter;
+    if (this.isObject(data) && 'rows' in data) {
       const meta = {
         count: 0,
       };
       if (data.count) {
         meta.count = data.count as number;
       }
-      return this.presenter.render(data.rows, { meta });
+      return presenter.render(data.rows, { meta });
     }
-    return this.presenter.render(data);
+    return presenter.render(data);
   }
 }

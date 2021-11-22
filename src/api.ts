@@ -6,9 +6,12 @@ import { config } from './config';
 import { ErrorModel } from './models/Error';
 import { statusRouter } from './routes/status';
 import { stampsRouter } from './routes/stamps';
+import { walletRouter } from './routes/wallet';
+import { hashesRouter } from './routes/hashes';
 import packageJson from '../package.json';
+import { log } from './lib/log';
 
-const app = express();
+export const app = express();
 
 // Set up port
 app.set('port', config.PORT);
@@ -35,9 +38,11 @@ app.use((req, res, next) => {
   res.header('Content-Type', 'application/vnd.api+json; charset=utf-8');
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH');
-  res.header('Access-Control-Allow-Headers',
+  res.header(
+    'Access-Control-Allow-Headers',
     'x-forwarded-proto,Accept,DNT,X-CustomHeader,Keep-Alive,User-Agent,'
-    + 'X-Requested-With,If-Modified-Since,Cache-Control,Content-Type');
+    + 'X-Requested-With,If-Modified-Since,Cache-Control,Content-Type',
+  );
   next();
 });
 
@@ -50,11 +55,12 @@ app.use((req, res, next) => {
  */
 app.use('/status', statusRouter);
 app.use('/stamps', stampsRouter);
+app.use('/wallet', walletRouter);
+app.use('/hashes', hashesRouter);
 
 // Not found error handling
-/* eslint-disable no-unused-vars */
 app.use((req, res) => {
-  console.warn(`Not found URL: ${req.url}`);
+  log.warn(`Not found URL: ${req.url}`);
   res
     .status(HttpStatus.NOT_FOUND)
     .send({
@@ -66,7 +72,7 @@ app.use((req, res) => {
 
 // 500 error handling
 app.use((err, req, res, next) => {
-  console.error(`Internal server error: ${err}`);
+  log.error(`Internal server error: ${err}`);
   res
     .status(HttpStatus.INTERNAL_SERVER_ERROR)
     .send({
@@ -75,16 +81,8 @@ app.use((err, req, res, next) => {
       ],
     });
 });
-/* eslint-enable no-unused-vars */
-
-// Express error logging
-app.on('error', (err) => {
-  console.error(`Express: ${err}`);
-});
 
 // Start web server using defined port
-app.listen(app.get('port'), () => {
-  console.info(`${packageJson.name} is running on port ${app.get('port')}`);
+export const server = app.listen(app.get('port'), () => {
+  log.info(`${packageJson.name} is running on port ${app.get('port')}`);
 });
-
-module.exports = app;

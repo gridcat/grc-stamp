@@ -1,5 +1,7 @@
-import { PrismaClient, StampsType, stamps } from '@prisma/client';
+import { StampsType } from '@prisma/client';
 import { TX } from 'gridcoin-rpc/dist/types';
+import { log } from '../lib/log';
+import { getPrisma } from '../lib/prisma';
 import { GenericInterface } from './Generic';
 
 export class Stamp implements GenericInterface {
@@ -33,7 +35,7 @@ export class Stamp implements GenericInterface {
     'updatedAt',
   ];
 
-  constructor(public model = (new PrismaClient()).stamps) {}
+  constructor(public model = getPrisma().stamps) {}
 
   public async saveOrUpdate(): Promise<any> {
     // Try to find existing one
@@ -45,7 +47,7 @@ export class Stamp implements GenericInterface {
       },
     });
     if (result && result.id && result.block === null) {
-      console.log('Update existing record');
+      log.info('Update existing record');
       return this.model.update({
         where: {
           id: result.id,
@@ -58,7 +60,7 @@ export class Stamp implements GenericInterface {
       });
     }
     if (!result || !result.id) {
-      console.log('Create new record');
+      log.info('Create new record');
       return this.model.create({
         data: {
           protocol: this.protocol,

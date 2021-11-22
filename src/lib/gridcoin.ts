@@ -1,7 +1,10 @@
 import { GridcoinRPC } from 'gridcoin-rpc';
 import { config } from '../config';
+import { log } from './log';
 
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const wait = (ms: number) => new Promise((resolve) => {
+  setTimeout(resolve, ms);
+});
 
 export const rpc = new GridcoinRPC({
   port: config.GRC_RPC_PORT,
@@ -15,9 +18,7 @@ export async function connect(): Promise<boolean> {
     await rpc.getWalletInfo();
     return true;
   } catch (err) {
-    // console.log(err);
-    // console.log('Error connecting');
-    // throw new Error(err.message);
+    log.warn('Connection error');
     await wait(5000);
     return false;
   }
